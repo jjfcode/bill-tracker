@@ -11,11 +11,9 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
-  resetInactivityTimer: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const INACTIVITY_TIMEOUT = 60000; // 1 minute in milliseconds
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
@@ -27,72 +25,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
   });
-  const [inactivityTimer, setInactivityTimer] = useState<NodeJS.Timeout | null>(null);
-  const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
 
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem('user');
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-    }
-  }, [inactivityTimer]);
-
-  const resetInactivityTimer = useCallback(() => {
-    const now = Date.now();
-    if (now - lastActivityTime > 1000) {
-      setLastActivityTime(now);
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
-      if (user) {
-        const timer = setTimeout(() => {
-          logout();
-        }, INACTIVITY_TIMEOUT);
-        setInactivityTimer(timer);
-      }
-    }
-  }, [user, inactivityTimer, logout, lastActivityTime]);
-
-  useEffect(() => {
-    if (user) {
-      const events = [
-        'mousedown',
-        'mousemove',
-        'keypress',
-        'scroll',
-        'touchstart',
-        'click',
-        'input',
-        'change',
-        'focus',
-        'blur'
-      ];
-
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible') {
-          resetInactivityTimer();
-        }
-      };
-
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      events.forEach(event => {
-        window.addEventListener(event, resetInactivityTimer, { passive: true });
-      });
-
-      resetInactivityTimer();
-
-      return () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        events.forEach(event => {
-          window.removeEventListener(event, resetInactivityTimer);
-        });
-        if (inactivityTimer) {
-          clearTimeout(inactivityTimer);
-        }
-      };
-    }
-  }, [user, resetInactivityTimer, inactivityTimer]);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -108,7 +45,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      // For demo purposes, accept any non-empty email and password
       if (email && password) {
         const newUser: User = {
           id: crypto.randomUUID(),
@@ -132,7 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         isAuthenticated: !!user,
-        resetInactivityTimer,
       }}
     >
       {children}

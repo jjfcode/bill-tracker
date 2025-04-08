@@ -1,57 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
-  Container,
   Box,
   Typography,
   Button,
   AppBar,
   Toolbar,
-  Snackbar,
-  Alert,
+  Grid,
+  Paper,
 } from '@mui/material';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BillsProvider } from './context/BillsContext';
 import AddBill from './components/AddBill';
 import BillList from './components/BillList';
 import Login from './components/Login';
-
-const WARNING_TIMEOUT = 45000; // 45 seconds (15 seconds before logout)
+import BillCalendar from './components/BillCalendar';
 
 const AppContent: React.FC = () => {
-  const { user, logout, isAuthenticated, resetInactivityTimer } = useAuth();
-  const [showWarning, setShowWarning] = useState(false);
-  const [warningTimer, setWarningTimer] = useState<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      // Set up warning timer
-      const timer = setTimeout(() => {
-        setShowWarning(true);
-      }, WARNING_TIMEOUT);
-      setWarningTimer(timer);
-
-      return () => {
-        if (timer) {
-          clearTimeout(timer);
-        }
-      };
-    }
-  }, [isAuthenticated]);
-
-  const handleUserActivity = () => {
-    resetInactivityTimer();
-    setShowWarning(false);
-    if (warningTimer) {
-      clearTimeout(warningTimer);
-    }
-  };
+  const { user, logout, isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
     return <Login />;
   }
 
   return (
-    <Container onMouseMove={handleUserActivity} onKeyDown={handleUserActivity}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'grey.100' }}>
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -65,29 +37,36 @@ const AppContent: React.FC = () => {
           </Button>
         </Toolbar>
       </AppBar>
-      <Box sx={{ my: 4 }}>
-        <AddBill />
-        <BillList />
+      <Box sx={{ flexGrow: 1, mt: 3, mb: 3, px: 3 }}>
+        <Grid container spacing={3}>
+          {/* Left Column - Calendar */}
+          <Grid item xs={12} md={2}>
+            <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+              <BillCalendar />
+            </Paper>
+          </Grid>
+          {/* Center Column - Main Content */}
+          <Grid item xs={12} md={8}>
+            <Paper elevation={3} sx={{ p: 3 }}>
+              <Box sx={{ mb: 3 }}>
+                <AddBill />
+              </Box>
+              <Box>
+                <BillList />
+              </Box>
+            </Paper>
+          </Grid>
+          {/* Right Column - Placeholder for Future Features */}
+          <Grid item xs={12} md={2}>
+            <Paper elevation={3} sx={{ p: 2, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography variant="body1" color="text.secondary">
+                Future Features
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
       </Box>
-      <Snackbar
-        open={showWarning}
-        autoHideDuration={15000}
-        onClose={() => setShowWarning(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity="warning"
-          sx={{ width: '100%' }}
-          action={
-            <Button color="inherit" size="small" onClick={handleUserActivity}>
-              Stay Logged In
-            </Button>
-          }
-        >
-          Your session will expire in 15 seconds due to inactivity.
-        </Alert>
-      </Snackbar>
-    </Container>
+    </Box>
   );
 };
 
