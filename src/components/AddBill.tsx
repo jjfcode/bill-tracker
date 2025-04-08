@@ -58,6 +58,7 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
       status: newBill.status || 'pending',
       isRecurring: newBill.isRecurring || false,
       frequency: newBill.frequency,
+      website: newBill.website || undefined,
     };
 
     if (billToEdit) {
@@ -75,6 +76,7 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
       status: 'pending',
       isRecurring: false,
       frequency: 'monthly',
+      website: '',
     });
   };
 
@@ -148,6 +150,17 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
                 <MenuItem value="other">Other</MenuItem>
               </Select>
             </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Website"
+              value={newBill.website || ''}
+              onChange={(e) =>
+                setNewBill({ ...newBill, website: e.target.value })
+              }
+              placeholder="https://example.com"
+            />
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControlLabel

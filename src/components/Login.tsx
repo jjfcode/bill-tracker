@@ -21,6 +21,11 @@ const Login: React.FC = () => {
     setError('');
 
     try {
+      if (!email || !password) {
+        setError('Please enter both email and password');
+        return;
+      }
+
       await login(email, password);
     } catch (err) {
       setError('Invalid email or password');

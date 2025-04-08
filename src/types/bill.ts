@@ -10,4 +10,5 @@ export interface Bill {
   lastPaid?: Date;
   isRecurring: boolean;
   frequency?: 'monthly' | 'quarterly' | 'annually';
+  website?: string;
 } 

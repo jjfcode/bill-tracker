@@ -19,10 +19,16 @@ const INACTIVITY_TIMEOUT = 60000; // 1 minute in milliseconds
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    try {
+      const savedUser = localStorage.getItem('user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (error) {
+      console.error('Error loading user:', error);
+      return null;
+    }
   });
   const [inactivityTimer, setInactivityTimer] = useState<NodeJS.Timeout | null>(null);
+  const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
 
   const logout = useCallback(() => {
     setUser(null);
@@ -33,30 +39,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [inactivityTimer]);
 
   const resetInactivityTimer = useCallback(() => {
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
+    const now = Date.now();
+    if (now - lastActivityTime > 1000) {
+      setLastActivityTime(now);
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+      if (user) {
+        const timer = setTimeout(() => {
+          logout();
+        }, INACTIVITY_TIMEOUT);
+        setInactivityTimer(timer);
+      }
     }
-    if (user) {
-      const timer = setTimeout(() => {
-        logout();
-      }, INACTIVITY_TIMEOUT);
-      setInactivityTimer(timer);
-    }
-  }, [user, inactivityTimer, logout]);
+  }, [user, inactivityTimer, logout, lastActivityTime]);
 
   useEffect(() => {
     if (user) {
-      // Set up event listeners for user activity
-      const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+      const events = [
+        'mousedown',
+        'mousemove',
+        'keypress',
+        'scroll',
+        'touchstart',
+        'click',
+        'input',
+        'change',
+        'focus',
+        'blur'
+      ];
+
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          resetInactivityTimer();
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
       events.forEach(event => {
-        window.addEventListener(event, resetInactivityTimer);
+        window.addEventListener(event, resetInactivityTimer, { passive: true });
       });
 
-      // Initial timer setup
       resetInactivityTimer();
 
-      // Cleanup
       return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
         events.forEach(event => {
           window.removeEventListener(event, resetInactivityTimer);
         });
@@ -69,23 +96,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
+      try {
+        localStorage.setItem('user', JSON.stringify(user));
+      } catch (error) {
+        console.error('Error saving user:', error);
+      }
     } else {
       localStorage.removeItem('user');
     }
   }, [user]);
 
   const login = async (email: string, password: string) => {
-    // In a real app, this would call an API
-    // For now, we'll simulate a successful login
-    if (email && password) {
-      setUser({
-        id: '1',
-        email,
-        name: email.split('@')[0],
-      });
-    } else {
-      throw new Error('Invalid credentials');
+    try {
+      // For demo purposes, accept any non-empty email and password
+      if (email && password) {
+        const newUser: User = {
+          id: crypto.randomUUID(),
+          email,
+          name: email.split('@')[0],
+        };
+        setUser(newUser);
+      } else {
+        throw new Error('Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
   };
 

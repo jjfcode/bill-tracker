@@ -11,8 +11,9 @@ import {
   Chip,
   Button,
   Tooltip,
+  Link,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Check as CheckIcon, Repeat as RepeatIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, Check as CheckIcon, Repeat as RepeatIcon, Link as LinkIcon } from '@mui/icons-material';
 import { Bill } from '../types/bill';
 import { useBills } from '../context/BillsContext';
 import AddBill from './AddBill';
@@ -73,6 +74,7 @@ const BillList: React.FC = () => {
               <TableCell>Status</TableCell>
               <TableCell>Last Paid</TableCell>
               <TableCell>Recurring</TableCell>
+              <TableCell>Website</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -97,6 +99,19 @@ const BillList: React.FC = () => {
                   {bill.isRecurring && (
                     <Tooltip title={`Recurring ${bill.frequency}`}>
                       <RepeatIcon color="primary" />
+                    </Tooltip>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {bill.website && (
+                    <Tooltip title={bill.website}>
+                      <Link
+                        href={bill.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <LinkIcon color="primary" />
+                      </Link>
                     </Tooltip>
                   )}
                 </TableCell>
