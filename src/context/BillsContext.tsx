@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Bill } from '../types/bill';
+import { encryptData, decryptData } from '../utils/encryption';
 
 interface BillsContextType {
   bills: Bill[];
@@ -11,27 +12,58 @@ interface BillsContextType {
 
 const BillsContext = createContext<BillsContextType | undefined>(undefined);
 
-export const BillsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [bills, setBills] = useState<Bill[]>([]);
+export const BillsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [bills, setBills] = useState<Bill[]>(() => {
+    try {
+      const savedBills = localStorage.getItem('bills');
+      if (savedBills) {
+        return decryptData(savedBills);
+      }
+    } catch (error) {
+      console.error('Error decrypting bills:', error);
+      // Clear corrupted data
+      localStorage.removeItem('bills');
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    try {
+      const encryptedBills = encryptData(bills);
+      localStorage.setItem('bills', encryptedBills);
+    } catch (error) {
+      console.error('Error encrypting bills:', error);
+    }
+  }, [bills]);
 
   const addBill = (bill: Bill) => {
-    setBills([...bills, bill]);
+    setBills((prevBills) => [...prevBills, bill]);
   };
 
   const updateBill = (id: string, updatedBill: Bill) => {
-    setBills(bills.map(bill => bill.id === id ? updatedBill : bill));
+    setBills((prevBills) =>
+      prevBills.map((bill) => (bill.id === id ? updatedBill : bill))
+    );
   };
 
   const deleteBill = (id: string) => {
-    setBills(bills.filter(bill => bill.id !== id));
+    setBills((prevBills) => prevBills.filter((bill) => bill.id !== id));
   };
 
   const getBillById = (id: string) => {
-    return bills.find(bill => bill.id === id);
+    return bills.find((bill) => bill.id === id);
   };
 
   return (
-    <BillsContext.Provider value={{ bills, addBill, updateBill, deleteBill, getBillById }}>
+    <BillsContext.Provider
+      value={{
+        bills,
+        addBill,
+        updateBill,
+        deleteBill,
+        getBillById,
+      }}
+    >
       {children}
     </BillsContext.Provider>
   );
