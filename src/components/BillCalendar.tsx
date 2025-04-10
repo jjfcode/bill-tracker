@@ -41,9 +41,22 @@ const BillCalendar: React.FC = () => {
     return false;
   };
 
-  const tileClassName = ({ date, view }: { date: Date; view: string }) => {
+  const getBillStatus = (bill: Bill, date: Date) => {
+    const currentDate = new Date();
+    const dueDate = new Date(date);
+    
+    if (bill.status === 'paid') {
+      return 'paid';
+    } else if (dueDate < currentDate) {
+      return 'overdue';
+    } else {
+      return 'pending';
+    }
+  };
+
+  const tileClassName = ({ date, view }: { date: Date; view: string }): string | null => {
     if (view === 'month') {
-      const isDueDay = bills.some((bill) => {
+      const billsOnDate = bills.filter((bill) => {
         // Check if it's the original due date
         const dueDate = new Date(bill.dueDate);
         const isOriginalDueDate = 
@@ -57,8 +70,12 @@ const BillCalendar: React.FC = () => {
         return isOriginalDueDate || isRecurringDate;
       });
 
-      if (isDueDay) {
-        return 'due-date-highlight';
+      if (billsOnDate.length > 0) {
+        // If there are multiple bills, prioritize the status in this order: overdue > pending > paid
+        const statuses = billsOnDate.map(bill => getBillStatus(bill, date));
+        if (statuses.includes('overdue')) return 'overdue-date';
+        if (statuses.includes('pending')) return 'pending-date';
+        return 'paid-date';
       }
     }
     return null;
@@ -70,20 +87,31 @@ const BillCalendar: React.FC = () => {
         Upcoming Payments
       </Typography>
       <Calendar tileClassName={tileClassName} />
-      {/* Basic CSS for highlighting - can be moved to a separate CSS file */}
       <style>
         {`
-          .due-date-highlight {
-            background-color: #ffeb3b; /* Yellow background for due dates */
+          .paid-date {
+            background-color: #4caf50;
             border-radius: 50%;
             font-weight: bold;
+            color: white;
+          }
+          .overdue-date {
+            background-color: #f44336;
+            border-radius: 50%;
+            font-weight: bold;
+            color: white;
+          }
+          .pending-date {
+            background-color: #ff9800;
+            border-radius: 50%;
+            font-weight: bold;
+            color: white;
           }
           .react-calendar {
             border: none;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             border-radius: 8px;
           }
-          /* You might want to add more styles to match your app's theme */
         `}
       </style>
     </Box>
