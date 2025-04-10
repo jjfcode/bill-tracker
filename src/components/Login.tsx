@@ -7,6 +7,8 @@ import {
   Paper,
   Container,
   Alert,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 
@@ -14,7 +16,8 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const [activeTab, setActiveTab] = useState(0);
+  const { login, signup } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,10 +29,19 @@ const Login: React.FC = () => {
         return;
       }
 
-      await login(email, password);
+      if (activeTab === 0) {
+        await login(email, password);
+      } else {
+        await signup(email, password);
+      }
     } catch (err) {
-      setError('Invalid email or password');
+      setError(activeTab === 0 ? 'Invalid email or password' : 'Error creating account');
     }
+  };
+
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+    setError('');
   };
 
   return (
@@ -52,8 +64,13 @@ const Login: React.FC = () => {
             width: '100%',
           }}
         >
+          <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 3 }}>
+            <Tab label="Login" />
+            <Tab label="Sign Up" />
+          </Tabs>
+
           <Typography component="h1" variant="h5" gutterBottom>
-            Bill Tracker Login
+            Bill Tracker {activeTab === 0 ? 'Login' : 'Sign Up'}
           </Typography>
           {error && (
             <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
@@ -81,7 +98,7 @@ const Login: React.FC = () => {
               label="Password"
               type="password"
               id="password"
-              autoComplete="current-password"
+              autoComplete={activeTab === 0 ? "current-password" : "new-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -91,7 +108,7 @@ const Login: React.FC = () => {
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              Sign In
+              {activeTab === 0 ? 'Sign In' : 'Create Account'}
             </Button>
           </Box>
         </Paper>
