@@ -8,20 +8,49 @@ interface BillsContextType {
   updateBill: (id: string, bill: Bill) => void;
   deleteBill: (id: string) => void;
   getBillById: (id: string) => Bill | undefined;
+  markBillAsPaid: (id: string, paymentDate: Date) => void;
 }
 
 const BillsContext = createContext<BillsContextType | undefined>(undefined);
+
+const ensureDate = (date: any): Date => {
+  if (date instanceof Date) return date;
+  if (typeof date === 'string') return new Date(date);
+  return new Date();
+};
+
+const migrateBill = (bill: any): Bill => {
+  if (!bill.paymentHistory) {
+    return {
+      ...bill,
+      dueDate: ensureDate(bill.dueDate),
+      paymentHistory: [{
+        date: ensureDate(bill.dueDate),
+        status: bill.status || 'pending'
+      }]
+    };
+  }
+
+  return {
+    ...bill,
+    dueDate: ensureDate(bill.dueDate),
+    paymentHistory: bill.paymentHistory.map((payment: any) => ({
+      date: ensureDate(payment.date),
+      status: payment.status
+    }))
+  };
+};
 
 export const BillsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [bills, setBills] = useState<Bill[]>(() => {
     try {
       const savedBills = localStorage.getItem('bills');
       if (savedBills) {
-        return decryptData(savedBills);
+        const decryptedBills = decryptData(savedBills);
+        return decryptedBills.map(migrateBill);
       }
     } catch (error) {
       console.error('Error decrypting bills:', error);
-      // Clear corrupted data
       localStorage.removeItem('bills');
     }
     return [];
@@ -37,7 +66,15 @@ export const BillsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [bills]);
 
   const addBill = (bill: Bill) => {
-    setBills((prevBills) => [...prevBills, bill]);
+    const billWithHistory: Bill = {
+      ...bill,
+      dueDate: ensureDate(bill.dueDate),
+      paymentHistory: [{
+        date: ensureDate(bill.dueDate),
+        status: 'pending' as const
+      }]
+    };
+    setBills((prevBills) => [...prevBills, billWithHistory]);
   };
 
   const updateBill = (id: string, updatedBill: Bill) => {
@@ -54,6 +91,37 @@ export const BillsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return bills.find((bill) => bill.id === id);
   };
 
+  const markBillAsPaid = (id: string, paymentDate: Date) => {
+    setBills((prevBills) =>
+      prevBills.map((bill) => {
+        if (bill.id === id) {
+          const updatedHistory = [...bill.paymentHistory];
+          const paymentIndex = updatedHistory.findIndex(
+            (payment) => payment.date.getTime() === paymentDate.getTime()
+          );
+
+          if (paymentIndex !== -1) {
+            updatedHistory[paymentIndex] = {
+              ...updatedHistory[paymentIndex],
+              status: 'paid' as const
+            };
+          } else {
+            updatedHistory.push({
+              date: paymentDate,
+              status: 'paid' as const
+            });
+          }
+
+          return {
+            ...bill,
+            paymentHistory: updatedHistory
+          };
+        }
+        return bill;
+      })
+    );
+  };
+
   return (
     <BillsContext.Provider
       value={{
@@ -62,6 +130,7 @@ export const BillsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateBill,
         deleteBill,
         getBillById,
+        markBillAsPaid
       }}
     >
       {children}

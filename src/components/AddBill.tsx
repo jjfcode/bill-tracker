@@ -32,9 +32,12 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
     amount: 0,
     dueDate: new Date(),
     category: '',
-    status: 'pending',
     isRecurring: false,
     frequency: 'monthly',
+    paymentHistory: [{
+      date: new Date(),
+      status: 'pending' as const
+    }]
   });
 
   useEffect(() => {
@@ -49,16 +52,21 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
       return;
     }
 
+    const dueDate = newBill.dueDate instanceof Date ? newBill.dueDate : new Date(newBill.dueDate);
+    
     const bill: Bill = {
       id: billToEdit?.id || crypto.randomUUID(),
       name: newBill.name,
       amount: newBill.amount,
-      dueDate: newBill.dueDate,
+      dueDate: dueDate,
       category: newBill.category,
-      status: newBill.status || 'pending',
       isRecurring: newBill.isRecurring || false,
       frequency: newBill.frequency,
       website: newBill.website || undefined,
+      paymentHistory: [{
+        date: dueDate,
+        status: 'pending' as const
+      }]
     };
 
     if (billToEdit) {
@@ -73,16 +81,27 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
       amount: 0,
       dueDate: new Date(),
       category: '',
-      status: 'pending',
       isRecurring: false,
       frequency: 'monthly',
       website: '',
+      paymentHistory: [{
+        date: new Date(),
+        status: 'pending' as const
+      }]
     });
   };
 
   const handleDateChange = (date: Dayjs | null) => {
     if (date) {
-      setNewBill({ ...newBill, dueDate: date.toDate() });
+      const newDate = date.toDate();
+      setNewBill({ 
+        ...newBill, 
+        dueDate: newDate,
+        paymentHistory: [{
+          date: newDate,
+          status: 'pending' as const
+        }]
+      });
     }
   };
 
@@ -103,7 +122,7 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Bill Name"
+              label="Name"
               value={newBill.name}
               onChange={(e) => setNewBill({ ...newBill, name: e.target.value })}
               required
@@ -114,9 +133,8 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
               fullWidth
               label="Amount"
               type="number"
-              value={newBill.amount || ''}
+              value={newBill.amount}
               onChange={handleAmountChange}
-              inputProps={{ min: 0, step: 0.01 }}
               required
             />
           </Grid>
@@ -131,83 +149,57 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
             </LocalizationProvider>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
-              <Select
-                value={newBill.category}
-                label="Category"
-                onChange={(e) =>
-                  setNewBill({ ...newBill, category: e.target.value })
-                }
-                required
-              >
-                <MenuItem value="utilities">Utilities</MenuItem>
-                <MenuItem value="rent">Rent</MenuItem>
-                <MenuItem value="insurance">Insurance</MenuItem>
-                <MenuItem value="subscription">Subscription</MenuItem>
-                <MenuItem value="credit">Credit Card</MenuItem>
-                <MenuItem value="loan">Loan</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              label="Category"
+              value={newBill.category}
+              onChange={(e) => setNewBill({ ...newBill, category: e.target.value })}
+              required
+            />
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               label="Website"
               value={newBill.website || ''}
-              onChange={(e) =>
-                setNewBill({ ...newBill, website: e.target.value })
-              }
-              placeholder="https://example.com"
+              onChange={(e) => setNewBill({ ...newBill, website: e.target.value })}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControlLabel
               control={
                 <Switch
-                  checked={newBill.isRecurring || false}
+                  checked={newBill.isRecurring}
                   onChange={(e) => setNewBill({ ...newBill, isRecurring: e.target.checked })}
                 />
               }
-              label="Recurring Bill"
+              label="Recurring"
             />
-          </Grid>
-          {newBill.isRecurring && (
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
+            {newBill.isRecurring && (
+              <FormControl fullWidth sx={{ mt: 2 }}>
                 <InputLabel>Frequency</InputLabel>
                 <Select
-                  value={newBill.frequency || 'monthly'}
+                  value={newBill.frequency}
                   label="Frequency"
-                  onChange={(e) => setNewBill({ ...newBill, frequency: e.target.value as Bill['frequency'] })}
+                  onChange={(e) => setNewBill({ ...newBill, frequency: e.target.value as 'monthly' | 'quarterly' | 'annually' })}
                 >
                   <MenuItem value="monthly">Monthly</MenuItem>
                   <MenuItem value="quarterly">Quarterly</MenuItem>
                   <MenuItem value="annually">Annually</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>
-          )}
+            )}
+          </Grid>
           <Grid item xs={12}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button type="submit" variant="contained" color="primary">
+                {billToEdit ? 'Update Bill' : 'Add Bill'}
+              </Button>
               {billToEdit && (
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={onCancelEdit}
-                >
+                <Button variant="outlined" onClick={onCancelEdit}>
                   Cancel
                 </Button>
               )}
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                size="large"
-              >
-                {billToEdit ? 'Update Bill' : 'Add Bill'}
-              </Button>
             </Box>
           </Grid>
         </Grid>

@@ -4,11 +4,13 @@ export interface Bill {
   dueDate: Date;
   amount: number;
   category: string;
-  status: 'paid' | 'pending' | 'overdue';
   paymentMethod?: string;
   notes?: string;
-  lastPaid?: Date;
   isRecurring: boolean;
   frequency?: 'monthly' | 'quarterly' | 'annually';
   website?: string;
+  paymentHistory: {
+    date: Date;
+    status: 'paid' | 'pending' | 'overdue';
+  }[];
 } 

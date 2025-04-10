@@ -14,24 +14,18 @@ const BillCalendar: React.FC = () => {
     const dueDate = new Date(bill.dueDate);
     const currentDate = new Date(date);
     
-    // If the bill is monthly recurring
     if (bill.frequency === 'monthly') {
-      // Check if it's the same day of the month
       return dueDate.getDate() === currentDate.getDate();
     }
     
-    // If the bill is quarterly recurring
     if (bill.frequency === 'quarterly') {
-      // Check if it's the same day and every 3 months
       const monthDiff = (currentDate.getFullYear() * 12 + currentDate.getMonth()) - 
                        (dueDate.getFullYear() * 12 + dueDate.getMonth());
       return dueDate.getDate() === currentDate.getDate() && 
              monthDiff % 3 === 0;
     }
     
-    // If the bill is yearly recurring
     if (bill.frequency === 'annually') {
-      // Check if it's the same day and month
       return (
         dueDate.getDate() === currentDate.getDate() &&
         dueDate.getMonth() === currentDate.getMonth()
@@ -45,9 +39,22 @@ const BillCalendar: React.FC = () => {
     const currentDate = new Date();
     const dueDate = new Date(date);
     
-    if (bill.status === 'paid') {
-      return 'paid';
-    } else if (dueDate < currentDate) {
+    // Check if there's a payment record for this date
+    const paymentRecord = bill.paymentHistory.find(
+      payment => {
+        const paymentDate = new Date(payment.date);
+        return paymentDate.getFullYear() === dueDate.getFullYear() &&
+               paymentDate.getMonth() === dueDate.getMonth() &&
+               paymentDate.getDate() === dueDate.getDate();
+      }
+    );
+
+    if (paymentRecord) {
+      return paymentRecord.status;
+    }
+
+    // If no payment record exists, determine status based on date
+    if (dueDate < currentDate) {
       return 'overdue';
     } else {
       return 'pending';
@@ -57,21 +64,34 @@ const BillCalendar: React.FC = () => {
   const tileClassName = ({ date, view }: { date: Date; view: string }): string | null => {
     if (view === 'month') {
       const billsOnDate = bills.filter((bill) => {
-        // Check if it's the original due date
         const dueDate = new Date(bill.dueDate);
         const isOriginalDueDate = 
           date.getFullYear() === dueDate.getFullYear() &&
           date.getMonth() === dueDate.getMonth() &&
           date.getDate() === dueDate.getDate();
 
-        // Check if it's a recurring date
         const isRecurringDate = getRecurringDates(bill, date);
+        const isFutureDate = date >= new Date();
 
-        return isOriginalDueDate || isRecurringDate;
+        // For recurring bills, show all future dates
+        if (bill.isRecurring && isRecurringDate && isFutureDate) {
+          return true;
+        }
+
+        // For non-recurring bills, show only the original date
+        if (!bill.isRecurring && isOriginalDueDate) {
+          return true;
+        }
+
+        // For past dates, show only if they match the original or recurring pattern
+        if (!isFutureDate && (isOriginalDueDate || isRecurringDate)) {
+          return true;
+        }
+
+        return false;
       });
 
       if (billsOnDate.length > 0) {
-        // If there are multiple bills, prioritize the status in this order: overdue > pending > paid
         const statuses = billsOnDate.map(bill => getBillStatus(bill, date));
         if (statuses.includes('overdue')) return 'overdue-date';
         if (statuses.includes('pending')) return 'pending-date';
