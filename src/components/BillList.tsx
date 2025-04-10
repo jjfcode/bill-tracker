@@ -14,6 +14,8 @@ import {
   Link,
   Typography,
   Box,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Check as CheckIcon, Repeat as RepeatIcon, Link as LinkIcon, Undo as UndoIcon } from '@mui/icons-material';
 import { Bill } from '../types/bill';
@@ -23,6 +25,8 @@ import AddBill from './AddBill';
 const BillList: React.FC = () => {
   const { bills, deleteBill, getBillById, updateBill, markBillAsPaid } = useBills();
   const [editingBill, setEditingBill] = useState<Bill | undefined>();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const getStatusColor = (status: 'paid' | 'pending' | 'overdue') => {
     switch (status) {
@@ -51,6 +55,25 @@ const BillList: React.FC = () => {
   const handleMarkAsPaid = (bill: Bill) => {
     const nextPaymentDate = getNextPaymentDate(bill);
     markBillAsPaid(bill.id, nextPaymentDate);
+  };
+
+  const handleUndoPayment = (bill: Bill) => {
+    const nextPaymentDate = getNextPaymentDate(bill);
+    const updatedPaymentHistory = bill.paymentHistory.filter(
+      payment => {
+        const paymentDate = new Date(payment.date);
+        return !(
+          paymentDate.getFullYear() === nextPaymentDate.getFullYear() &&
+          paymentDate.getMonth() === nextPaymentDate.getMonth() &&
+          paymentDate.getDate() === nextPaymentDate.getDate()
+        );
+      }
+    );
+
+    updateBill(bill.id, {
+      ...bill,
+      paymentHistory: updatedPaymentHistory
+    });
   };
 
   const getNextPaymentDate = (bill: Bill): Date => {
@@ -98,25 +121,6 @@ const BillList: React.FC = () => {
     return 'pending';
   };
 
-  const handleUndoPayment = (bill: Bill) => {
-    const nextPaymentDate = getNextPaymentDate(bill);
-    const updatedPaymentHistory = bill.paymentHistory.filter(
-      payment => {
-        const paymentDate = new Date(payment.date);
-        return !(
-          paymentDate.getFullYear() === nextPaymentDate.getFullYear() &&
-          paymentDate.getMonth() === nextPaymentDate.getMonth() &&
-          paymentDate.getDate() === nextPaymentDate.getDate()
-        );
-      }
-    );
-
-    updateBill(bill.id, {
-      ...bill,
-      paymentHistory: updatedPaymentHistory
-    });
-  };
-
   return (
     <>
       {editingBill && (
@@ -130,8 +134,18 @@ const BillList: React.FC = () => {
           Bill List
         </Typography>
       </Box>
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer 
+        component={Paper} 
+        sx={{ 
+          maxWidth: '100%',
+          overflowX: 'auto',
+          '& .MuiTableCell-root': {
+            padding: isMobile ? 1 : 2,
+            fontSize: isMobile ? '0.875rem' : '1rem',
+          }
+        }}
+      >
+        <Table size={isMobile ? "small" : "medium"}>
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
@@ -158,43 +172,49 @@ const BillList: React.FC = () => {
                     <Chip
                       label={currentStatus}
                       color={getStatusColor(currentStatus)}
-                      size="small"
+                      size={isMobile ? "small" : "medium"}
                     />
                   </TableCell>
                   <TableCell>
                     {bill.isRecurring && (
                       <Tooltip title={`Recurring ${bill.frequency}`}>
-                        <RepeatIcon color="primary" />
+                        <RepeatIcon color="primary" fontSize={isMobile ? "small" : "medium"} />
                       </Tooltip>
                     )}
                   </TableCell>
                   <TableCell>
                     {bill.website && (
                       <Link href={bill.website} target="_blank" rel="noopener noreferrer">
-                        <LinkIcon />
+                        <LinkIcon fontSize={isMobile ? "small" : "medium"} />
                       </Link>
                     )}
                   </TableCell>
                   <TableCell>
-                    <IconButton onClick={() => handleEdit(bill.id)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => deleteBill(bill.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                    {currentStatus !== 'paid' ? (
-                      <Tooltip title="Mark as Paid">
-                        <IconButton onClick={() => handleMarkAsPaid(bill)}>
-                          <CheckIcon />
+                    <Box sx={{ display: 'flex', gap: isMobile ? 0.5 : 1 }}>
+                      <Tooltip title="Edit">
+                        <IconButton onClick={() => handleEdit(bill.id)} size={isMobile ? "small" : "medium"}>
+                          <EditIcon fontSize={isMobile ? "small" : "medium"} />
                         </IconButton>
                       </Tooltip>
-                    ) : (
-                      <Tooltip title="Undo Payment">
-                        <IconButton onClick={() => handleUndoPayment(bill)}>
-                          <UndoIcon />
+                      <Tooltip title="Delete">
+                        <IconButton onClick={() => deleteBill(bill.id)} size={isMobile ? "small" : "medium"}>
+                          <DeleteIcon fontSize={isMobile ? "small" : "medium"} />
                         </IconButton>
                       </Tooltip>
-                    )}
+                      {currentStatus !== 'paid' ? (
+                        <Tooltip title="Mark as Paid">
+                          <IconButton onClick={() => handleMarkAsPaid(bill)} size={isMobile ? "small" : "medium"}>
+                            <CheckIcon fontSize={isMobile ? "small" : "medium"} />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="Undo Payment">
+                          <IconButton onClick={() => handleUndoPayment(bill)} size={isMobile ? "small" : "medium"}>
+                            <UndoIcon fontSize={isMobile ? "small" : "medium"} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                 </TableRow>
               );

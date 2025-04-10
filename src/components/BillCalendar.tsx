@@ -2,11 +2,13 @@ import React from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { useBills } from '../context/BillsContext';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { Bill } from '../types/bill';
 
 const BillCalendar: React.FC = () => {
   const { bills } = useBills();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const getRecurringDates = (bill: Bill, date: Date) => {
     if (!bill.isRecurring || !bill.frequency) return false;
@@ -102,11 +104,14 @@ const BillCalendar: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: isMobile ? 1 : 2 }}>
       <Typography variant="h6" gutterBottom>
         Upcoming Payments
       </Typography>
-      <Calendar tileClassName={tileClassName} />
+      <Calendar 
+        tileClassName={tileClassName}
+        className="responsive-calendar"
+      />
       <style>
         {`
           .paid-date {
@@ -131,6 +136,18 @@ const BillCalendar: React.FC = () => {
             border: none;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             border-radius: 8px;
+            width: 100%;
+            max-width: 100%;
+          }
+          .responsive-calendar {
+            font-size: ${isMobile ? '0.8rem' : '1rem'};
+          }
+          .responsive-calendar .react-calendar__tile {
+            padding: ${isMobile ? '0.5em 0.2em' : '0.75em 0.5em'};
+          }
+          .responsive-calendar .react-calendar__navigation button {
+            min-width: ${isMobile ? '30px' : '44px'};
+            font-size: ${isMobile ? '0.8rem' : '1rem'};
           }
         `}
       </style>

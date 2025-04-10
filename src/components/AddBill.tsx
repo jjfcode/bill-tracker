@@ -12,6 +12,8 @@ import {
   Typography,
   FormControlLabel,
   Switch,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -39,6 +41,9 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
       status: 'pending' as const
     }]
   });
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     if (billToEdit) {
@@ -113,12 +118,12 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
   };
 
   return (
-    <Paper sx={{ p: 3, mb: 3 }}>
+    <Paper sx={{ p: isMobile ? 2 : 3, mb: 3 }}>
       <Typography variant="h6" gutterBottom>
         {billToEdit ? 'Edit Bill' : 'Add New Bill'}
       </Typography>
       <form onSubmit={handleSubmit}>
-        <Grid container spacing={2}>
+        <Grid container spacing={isMobile ? 1 : 2}>
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
@@ -126,6 +131,7 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
               value={newBill.name}
               onChange={(e) => setNewBill({ ...newBill, name: e.target.value })}
               required
+              size={isMobile ? "small" : "medium"}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -136,6 +142,7 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
               value={newBill.amount}
               onChange={handleAmountChange}
               required
+              size={isMobile ? "small" : "medium"}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -145,6 +152,11 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
                 value={dayjs(newBill.dueDate)}
                 onChange={handleDateChange}
                 sx={{ width: '100%' }}
+                slotProps={{
+                  textField: {
+                    size: isMobile ? "small" : "medium"
+                  }
+                }}
               />
             </LocalizationProvider>
           </Grid>
@@ -155,6 +167,7 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
               value={newBill.category}
               onChange={(e) => setNewBill({ ...newBill, category: e.target.value })}
               required
+              size={isMobile ? "small" : "medium"}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -163,6 +176,7 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
               label="Website"
               value={newBill.website || ''}
               onChange={(e) => setNewBill({ ...newBill, website: e.target.value })}
+              size={isMobile ? "small" : "medium"}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -171,12 +185,13 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
                 <Switch
                   checked={newBill.isRecurring}
                   onChange={(e) => setNewBill({ ...newBill, isRecurring: e.target.checked })}
+                  size={isMobile ? "small" : "medium"}
                 />
               }
               label="Recurring"
             />
             {newBill.isRecurring && (
-              <FormControl fullWidth sx={{ mt: 2 }}>
+              <FormControl fullWidth sx={{ mt: 2 }} size={isMobile ? "small" : "medium"}>
                 <InputLabel>Frequency</InputLabel>
                 <Select
                   value={newBill.frequency}
@@ -191,12 +206,21 @@ const AddBill: React.FC<AddBillProps> = ({ billToEdit, onCancelEdit }) => {
             )}
           </Grid>
           <Grid item xs={12}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button type="submit" variant="contained" color="primary">
+            <Box sx={{ display: 'flex', gap: 2, flexDirection: isMobile ? 'column' : 'row' }}>
+              <Button 
+                type="submit" 
+                variant="contained" 
+                color="primary"
+                fullWidth={isMobile}
+              >
                 {billToEdit ? 'Update Bill' : 'Add Bill'}
               </Button>
               {billToEdit && (
-                <Button variant="outlined" onClick={onCancelEdit}>
+                <Button 
+                  variant="outlined" 
+                  onClick={onCancelEdit}
+                  fullWidth={isMobile}
+                >
                   Cancel
                 </Button>
               )}
