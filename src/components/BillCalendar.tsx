@@ -141,14 +141,17 @@ const BillCalendar: React.FC = () => {
             max-width: 100%;
           }
           .responsive-calendar {
-            font-size: ${isMobile ? '0.8rem' : '1rem'};
+            font-size: ${isMobile ? '0.7rem' : '1rem'}; // Reduced font size for mobile
           }
           .responsive-calendar .react-calendar__tile {
-            padding: ${isMobile ? '0.5em 0.2em' : '0.75em 0.5em'};
+            padding: ${isMobile ? '0.4em 0.2em' : '0.75em 0.5em'}; // Adjusted padding for mobile
           }
           .responsive-calendar .react-calendar__navigation button {
-            min-width: ${isMobile ? '30px' : '44px'};
-            font-size: ${isMobile ? '0.8rem' : '1rem'};
+            min-width: ${isMobile ? '28px' : '44px'}; // Reduced button size for mobile
+            font-size: ${isMobile ? '0.7rem' : '1rem'}; // Adjusted font size for navigation buttons
+          }
+          .responsive-calendar .react-calendar__month-view__days__day {
+            height: ${isMobile ? '2.5em' : '3em'}; // Adjusted day cell height for mobile
           }
         `}
       </style>
