@@ -111,6 +111,7 @@ const BillCalendar: React.FC = () => {
       <Calendar 
         tileClassName={tileClassName}
         className="responsive-calendar"
+        locale="en-US" // Start week on Sunday
       />
       <style>
         {`
@@ -155,4 +156,4 @@ const BillCalendar: React.FC = () => {
   );
 };
 
-export default BillCalendar; 
+export default BillCalendar;
