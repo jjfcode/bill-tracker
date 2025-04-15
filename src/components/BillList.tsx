@@ -120,6 +120,20 @@ const BillList: React.FC = () => {
     return 'pending';
   };
 
+  const getUpcomingRecurringBills = (): Bill[] => {
+    const today = new Date();
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  
+    return bills.filter((bill) => {
+      if (!bill.isRecurring || !bill.frequency) return false;
+  
+      const nextPaymentDate = getNextPaymentDate(bill);
+      return nextPaymentDate > today && nextPaymentDate <= nextMonth;
+    });
+  };
+  
+  const upcomingRecurringBills = getUpcomingRecurringBills();
+
   return (
     <>
       {editingBill && (
@@ -149,7 +163,7 @@ const BillList: React.FC = () => {
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell>Amount</TableCell>
-              <TableCell>Next Payment</TableCell>
+              <TableCell>Due Date</TableCell>
               <TableCell>Category</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Recurring</TableCell>
@@ -221,8 +235,37 @@ const BillList: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      {upcomingRecurringBills.length > 0 && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6" component="h2" gutterBottom>
+            Upcoming Recurring Payments (Next Month)
+          </Typography>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Amount</TableCell>
+                  <TableCell>Next Payment</TableCell>
+                  <TableCell>Category</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {upcomingRecurringBills.map((bill) => (
+                  <TableRow key={bill.id}>
+                    <TableCell>{bill.name}</TableCell>
+                    <TableCell>${bill.amount.toFixed(2)}</TableCell>
+                    <TableCell>{getNextPaymentDate(bill).toLocaleDateString()}</TableCell>
+                    <TableCell>{bill.category}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
     </>
   );
 };
 
-export default BillList; 
+export default BillList;
